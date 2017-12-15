@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "imageutils": "0.0.6",
+    "three": "^0.88.0"
+  }
+}
