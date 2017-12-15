@@ -8,10 +8,9 @@ function BotwHeightMap() {
     // Make sure Three.js exists and is loaded
     if (typeof THREE !== 'undefined') {
         this.backgroundColor = new THREE.Color().setHSL(0.556, 1, 0.85);
-        this.heightMap = '5200000000.composite.png';
+        this.heightMap = 'assets/5200000000.composite.png';
         this.heightMapScale = 4;
-        this.heightMapTexture = 'map-texture.png';
-        // this.heightMapTexture = 'BotW-Map-FULL';
+        this.heightMapTexture = 'assets/map-texture.png';
 
         // Make sure the browser and gpu support WebGL
         if (this.isWebGLSupported()) {
