@@ -1,6 +1,13 @@
 {
   "dependencies": {
+    "connect": "^3.6.5",
     "imageutils": "0.0.6",
+    "serve-static": "^1.13.1",
     "three": "^0.88.0"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zephenryus/botw-map-3d.git"
   }
 }
