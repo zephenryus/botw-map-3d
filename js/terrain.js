@@ -8,9 +8,10 @@ function BotwHeightMap() {
     // Make sure Three.js exists and is loaded
     if (typeof THREE !== 'undefined') {
         this.backgroundColor = new THREE.Color().setHSL(0.556, 1, 0.85);
-        this.heightMap = 'assets/5200000000.composite.png';
-        this.heightMapScale = 4;
+        this.heightMap = 'assets/5000000000.hght.json';
+        this.heightMapScale = 0x400 / 0xffff;
         this.heightMapTexture = 'assets/map-texture.png';
+        this.mtlLoader = new THREE.MTLLoader();
 
         // Make sure the browser and gpu support WebGL
         if (this.isWebGLSupported()) {
@@ -44,9 +45,9 @@ BotwHeightMap.prototype.isWebGLSupported = function () {
 BotwHeightMap.prototype.init = function () {
     var that = this;
     this.scene = new THREE.Scene();
-    this.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 500);
-    this.camera.position.z = 100;
-    this.camera.position.y = 50;
+    this.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 24000);
+    this.camera.position.z = 1400;
+    this.camera.position.y = 1000;
 
     this.renderer = new THREE.WebGLRenderer({
         antialias: false
@@ -88,12 +89,13 @@ BotwHeightMap.prototype.init = function () {
         that.onKeyUp(event);
     }, false);
 
-    var img = new Image();
-    img.onload = function () {
-        var data = that.getHeightData(img, that.heightMapScale);
-        that.generateHeightmapMesh(data);
-    };
-    img.src = this.heightMap;
+    // var img = new Image();
+    // img.onload = function () {
+        var data = that.getHeightData(this.heightMap, function (data) {
+            that.generateHeightmapMesh(data);
+        });
+    // };
+    // img.src = this.heightMap;
 
     this.setScene();
 };
@@ -102,9 +104,10 @@ BotwHeightMap.prototype.init = function () {
  * Adds background, fog and lights to the scene
  */
 BotwHeightMap.prototype.setScene = function () {
+    var that = this;
     // Add Background
     this.scene.background = this.backgroundColor;
-    this.scene.fog = new THREE.Fog(this.scene.background, 50, 400);
+    // this.scene.fog = new THREE.Fog(this.scene.background, 50, 24000);
 
     // Add hemisphere light to scene
     var hemisphereLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 0.6);
@@ -119,6 +122,29 @@ BotwHeightMap.prototype.setScene = function () {
     directionalLight.position.set(-1, 1.75, 1);
     directionalLight.position.multiplyScalar(90);
     this.scene.add(directionalLight);
+
+    this.mtlLoader.setBaseUrl('assets/models/TwnObj_HyruleCastleAncientPole_B_Far/');
+    this.mtlLoader.setPath('assets/models/TwnObj_HyruleCastleAncientPole_B_Far/');
+    this.mtlLoader.load('TwnObj_HyruleCastleAncientPole_B_Far-02.mtl', function (materials) {
+        materials.preload();
+
+        var objLoader = new THREE.OBJLoader();
+        objLoader.setMaterials(materials);
+        objLoader.setPath('assets/models/TwnObj_HyruleCastleAncientPole_B_Far/');
+        objLoader.load('TwnObj_HyruleCastleAncientPole_B_Far-02.obj', function (object) {
+            object.position.set(-253.9629, 226.518, -1352.606); // AncientPole_0
+            // object.position.set(-429.5598, 237.4373, -716.0523); // AncientPole_1
+            // object.position.set(-677.0128, 219.5638, -1058.217); // AncientPole_2
+            // object.position.set(-81.6676, 239.0276, -746.595); // AncientPole_3
+            // object.position.set(170.5585, 233.4323, -1091.421); // AncientPole_4
+            object.rotation.set(1.570844, 1.210785, -1.570827); // AncientPole_0 1.210785
+            // object.rotation.set(-1 * (-0.5891882), 0.8203048, -0.7458839); // AncientPole_1
+            // object.rotation.set(-1 * (-0.5891882), 0.8203048, -0.7458839); // AncientPole_2
+            // object.rotation.set(-1 * (-0.5891882), 0.8203048, -0.7458839); // AncientPole_3
+            // object.rotation.set(-1 * (-0.5891882), 0.8203048, -0.7458839); // AncientPole_4
+            that.scene.add(object);
+        });
+    });
 };
 
 /**
@@ -139,37 +165,24 @@ BotwHeightMap.prototype.animate = function () {
  * @param scale Number  Value to scale height by
  * @returns     {Float32Array}
  */
-BotwHeightMap.prototype.getHeightData = function (img, scale) {
-    scale = (!scale) ? 1 : scale;
+BotwHeightMap.prototype.getHeightData = function (url, callback) {
+    var that = this;
+    this.getJSON(url, function (err, data) {
+        if (err) {
+            console.log("Error: " + err);
+        } else {
+            for (var i = 0; i < data.length; i++) {
+                data[i] *= that.heightMapScale;
+            }
 
-    var canvas = document.createElement('canvas');
-    canvas.width = img.width;
-    canvas.height = img.height;
-    var ctx = canvas.getContext('2d');
-
-    var size = img.width * img.height;
-    var data = new Float32Array(size);
-
-    ctx.drawImage(img, 0, 0);
-
-    var i, j;
-    for (i = 0; i < size; i++) {
-        data[i] = 0;
-    }
-
-    var imgd = ctx.getImageData(0, 0, img.width, img.height);
-    var pix = imgd.data;
-
-    for (i = 0, j = 0; i < pix.length; i += 4) {
-        var all = pix[i] + pix[i + 1] + pix[i + 2];
-        data[j++] = all / (12 * scale);
-    }
-
-    return data;
+            callback(data);
+        }
+        return false;
+    });
 };
 
 BotwHeightMap.prototype.generateHeightmapMesh = function (data) {
-    var geometry = new THREE.PlaneGeometry(256, 256, 1023, 1023);
+    var geometry = new THREE.PlaneGeometry(16000, 16000, 255, 255);
 
     var that = this;
     var texture = THREE.ImageUtils.loadTexture(this.heightMapTexture, {}, function () {
@@ -179,13 +192,35 @@ BotwHeightMap.prototype.generateHeightmapMesh = function (data) {
     var material = new THREE.MeshLambertMaterial({color: 0xffffff, map: texture});
     this.terrain = new THREE.Mesh(geometry, material);
     this.terrain.rotation.x = -Math.PI / 2;
-    this.terrain.translateZ(0);
+    // this.terrain.rotation.y = Math.PI;
+    // this.terrain.rotation.y = Math.PI / 2;
 
     for (var i = 0; i < this.terrain.geometry.vertices.length; i++) {
         this.terrain.geometry.vertices[i].z = data[i];
     }
 
     this.scene.add(this.terrain);
+
+    data = this.getHeightData('assets/5000000000.water.extm.json', function (data) {
+        geometry = new THREE.PlaneGeometry(16000, 16000, 255, 255);
+
+        // var texture = THREE.ImageUtils.loadTexture(this.heightMapTexture, {}, function () {
+        //     that.renderer.render(that.scene);
+        //     that.animate();
+        // });
+        // var waterAlphaMap = new THREE.TextureLoader().load('assets/water-alpha-map.png');
+        material = new THREE.MeshBasicMaterial({color: 0x002288, transparent: true, opacity: 0.5});
+        var water = new THREE.Mesh(geometry, material);
+        water.rotation.x = -Math.PI / 2;
+        // water.rotation.y = Math.PI;
+        // water.rotation.y = Math.PI / 2;
+
+        for (i = 0; i < water.geometry.vertices.length; i++) {
+            water.geometry.vertices[i].z = data[i];
+        }
+
+        that.scene.add(water);
+    });
 };
 
 BotwHeightMap.prototype.render = function () {
@@ -268,6 +303,21 @@ BotwHeightMap.prototype.walker = function () {
 
     if (this.moveUp) this.camera.translateY(0.5);
     if (this.moveDown) this.camera.translateY(-0.5);
+};
+
+BotwHeightMap.prototype.getJSON = function (url, callback) {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', url, true);
+    xhr.responseType = 'json';
+    xhr.onload = function () {
+        var status = xhr.status;
+        if (status === 200) {
+            callback(false, xhr.response);
+        } else {
+            callback(status, xhr.response);
+        }
+    };
+    xhr.send();
 };
 
 document.addEventListener('DOMContentLoaded', function () {
