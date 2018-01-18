@@ -12,6 +12,7 @@ function BotwHeightMap() {
         this.heightMapScale = 0x400 / 0xffff;
         this.heightMapTexture = 'assets/map-texture.png';
         this.mtlLoader = new THREE.MTLLoader();
+        this.waterMapTexture = 'assets/5000000000.water.tex.png';
 
         // Make sure the browser and gpu support WebGL
         if (this.isWebGLSupported()) {
@@ -204,12 +205,13 @@ BotwHeightMap.prototype.generateHeightmapMesh = function (data) {
     data = this.getHeightData('assets/5000000000.water.extm.json', function (data) {
         geometry = new THREE.PlaneGeometry(16000, 16000, 255, 255);
 
-        // var texture = THREE.ImageUtils.loadTexture(this.heightMapTexture, {}, function () {
-        //     that.renderer.render(that.scene);
-        //     that.animate();
-        // });
+        var texture = THREE.ImageUtils.loadTexture(that.waterMapTexture, {}, function () {
+            that.renderer.render(that.scene);
+            that.animate();
+        });
         // var waterAlphaMap = new THREE.TextureLoader().load('assets/water-alpha-map.png');
-        material = new THREE.MeshBasicMaterial({color: 0x002288, transparent: true, opacity: 0.5});
+        // material = new THREE.MeshBasicMaterial({color: 0x002288, transparent: true, opacity: 0.5});
+        var material = new THREE.MeshLambertMaterial({color: 0xffffff, map: texture});
         var water = new THREE.Mesh(geometry, material);
         water.rotation.x = -Math.PI / 2;
         // water.rotation.y = Math.PI;
